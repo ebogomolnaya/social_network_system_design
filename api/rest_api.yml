@@ -6,17 +6,17 @@ info:
   version: 1.0.0
 
 tags:
-  - name: record
+  - name: post
     description: Действия над постами
   - name: photo
     description: Действия над фотографиями
   - name: user
     description: Действия с пользователем
 paths:
-  /record:
+  /post:
     post:
       tags:
-        - record
+        - post
       summary: Добавление нового поста
       description: Добавление нового поста с описанием, фотографиями и привязкой к месту путешествия
       requestBody:
@@ -24,14 +24,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Record'
+              $ref: '#/components/schemas/Post'
             examples:
               request:
                 value:
                   id: 2843614705
                   user_id: 482953816921
-                  description: "Путешествие в Африку в декабре этого года"
-                  geoposition: "Нгоронгоро, Танзания"
+                  text: "Путешествие в Африку в декабре этого года"
+                  location: "Нгоронгоро, Танзания"
                   photos: []
         required: true
       responses:
@@ -58,10 +58,10 @@ paths:
                       message: "Некорректный формат"
         '5XX':
           description: Ошибка сервера
-  /record/{id}/react:
+  /post/{id}/reaction:
     post:
       tags:
-        - record
+        - post
       summary: Добавление реакции к посту
       description: Добавление реакции к посту
       parameters:
@@ -79,28 +79,22 @@ paths:
             schema:
               type: object
               properties:
-                id:
-                  type: integer
-                  format: int64
-                  description: id операции
-                user_id:
-                  type: integer
-                  format: int64
-                  description: id пользователя, давшего оценку
                 reaction_id:
                   type: integer
                   format: int32
                   description: id реакции из справочника
+                user_id:
+                  type: integer
+                  format: int64
+                  description: id пользователя, давшего оценку
               required:
-                - id
-                - user_id
                 - reaction_id
+                - user_id
             examples:
               request:
                 value:
-                  id: 2843614705
+                  reaction_id: 12
                   user_id: 482953816921
-                  reaction_id: 368
         required: true
       responses:
         '204':
@@ -124,10 +118,10 @@ paths:
                       message: "Некорректный формат"
         '5XX':
           description: Ошибка сервера
-  /record/{id}/comment:
+  /post/{id}/comment:
     post:
       tags:
-        - record
+        - post
       summary: Комментирование поста
       description: Добавление комментария к посту
       parameters:
@@ -145,28 +139,22 @@ paths:
             schema:
               type: object
               properties:
-                id:
-                  type: integer
-                  format: int64
-                  description: id операции
                 user_id:
                   type: integer
                   format: int64
                   description: id пользователя, добавившего комментарий
-                comment:
+                text:
                   type: string
                   maxLength: 1500
                   description: текст комментария
               required:
-                - id
                 - user_id
-                - reaction_id
+                - text
             examples:
               request:
                 value:
-                  id: 2843614705
                   user_id: 482953816921
-                  comment: "Я останавливался в этом же отеле год назад."
+                  text: "Я останавливался в этом же отеле год назад."
         required: true
       responses:
         '204':
@@ -190,10 +178,144 @@ paths:
                       message: "Некорректный формат"
         '5XX':
           description: Ошибка сервера
-  /record/popularDestinations:
+  /post/{id}/comments:
     get:
       tags:
-        - record
+        - post
+      summary: Получение комментариев для поста
+      description: Получение комментариев для поста
+      parameters:
+        - name: id
+          in: path
+          description: id поста
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: limit
+          in: query
+          description: количество комментариев
+          required: false
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          description: номер страницы с результатами
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Массив комментариев
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      format: int64
+                      description: id комментария
+                      example: 5379031472
+                    text:
+                      type: string
+                      description: текст комментария
+                    user_id:
+                      type: integer
+                      format: int64
+                      description: пользователь, добавивший комментарий
+                      example: 482953816921
+                    created_at:
+                      type: integer
+                      format: int64
+                      description: время добавления в миллисекундах
+                      example: 1760299494000
+        '404':
+          description: Пост не найден
+        '422':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                response:
+                  value:
+                    code: "E.4001.002"
+                    details:
+                      target: "limit"
+                      message: "Значение не может быть отрицательным"
+        '5XX':
+          description: Ошибка сервера
+  /post/{id}/reactions:
+    get:
+      tags:
+        - post
+      summary: Подсчет реакций для поста
+      description: Подсчет реакций для поста
+      parameters:
+        - name: id
+          in: path
+          description: id поста
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Массив реакций с указанием кол-ва пользователей, выбравших реакцию
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    reaction_id:
+                      type: integer
+                      format: int32
+                      description: id реакции из справочника
+                    count:
+                      type: integer
+                      description: сколько пользователей выбрало реакцию
+                      example: 172
+        '404':
+          description: Пост не найден
+        '5XX':
+          description: Ошибка сервера
+  /post/{id}/photos:
+    get:
+      tags:
+        - post
+      summary: Получение всех фотографий для поста
+      description: Получение всех фотографий для поста
+      parameters:
+        - name: id
+          in: path
+          description: id поста
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Массив фотографий
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Photo'
+        '404':
+          description: Пост не найден
+        '5XX':
+          description: Ошибка сервера
+  /post/popularDestinations:
+    get:
+      tags:
+        - post
       summary: Поиск популярных мест для путешествий
       description: Поиск популярных мест для путешествий
       parameters:
@@ -217,7 +339,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Record'
+                  $ref: '#/components/schemas/Post'
         '422':
           description: Ошибка валидации
           content:
@@ -305,7 +427,7 @@ paths:
       parameters:
         - name: id
           in: path
-          description: id пользователя
+          description: id подписчика
           required: true
           schema:
             type: integer
@@ -317,22 +439,16 @@ paths:
             schema:
               type: object
               properties:
-                id:
-                  type: integer
-                  format: int64
-                  description: id операции
-                user_id_to_follow:
+                followed_user_id:
                   type: integer
                   format: int64
                   description: id пользователя, на которого подписываются
               required:
-                - id
-                - user_id_to_follow
+                - followed_user_id
             examples:
               request:
                 value:
-                  id: 2843614705
-                  user_id_to_follow: 482953816921
+                  followed_user_id: 482953816921
         required: true
       responses:
         '204':
@@ -390,7 +506,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Record'
+                  $ref: '#/components/schemas/Post'
         '404':
           description: Пользователь не найден
         '422':
@@ -442,7 +558,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Record'
+                  $ref: '#/components/schemas/Post'
         '404':
           description: Пользователь не найден
         '422':
@@ -462,7 +578,7 @@ paths:
           description: Ошибка сервера
 components:
   schemas:
-    Record:
+    Post:
       type: object
       properties:
         id:
@@ -475,16 +591,21 @@ components:
           format: int64
           description: id пользователя
           example: 482953816921
-        description:
+        text:
           type: string
           description: текст поста
           maxLength: 2200
           example: Путешествие в Африку в декабре этого года
-        geoposition:
+        location:
           type: string
           description: место путешествия
           maxLength: 512
           example: Нгоронгоро, Танзания
+        created_at:
+          type: integer
+          format: int64
+          description: время добавления в миллисекундах
+          example: 1760299494000
         photos:
           type: array
           description: массив фотографий
@@ -495,8 +616,8 @@ components:
       required:
         - id
         - user_id
-        - description
-        - geoposition
+        - text
+        - location
     Photo:
       type: object
       properties:
@@ -505,10 +626,13 @@ components:
           format: int64
           description: id фотографии
           example: 5379031472
-        photo:
+        image:
           type: string
           format: binary
           description: фотография
+      required:
+        - id
+        - image
     Error:
       type: object
       properties:
