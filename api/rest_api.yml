@@ -6,19 +6,19 @@ info:
   version: 1.0.0
 
 tags:
-  - name: post
+  - name: posts
     description: Действия над постами
-  - name: photo
+  - name: photos
     description: Действия над фотографиями
-  - name: user
-    description: Действия с пользователем
+  - name: users
+    description: Действия с пользователями
 paths:
-  /post:
+  /posts:
     post:
       tags:
-        - post
+        - posts
       summary: Добавление нового поста
-      description: Добавление нового поста с описанием, фотографиями и привязкой к месту путешествия
+      description: Добавление нового поста с описанием и местом путешествия
       requestBody:
         description: Создание нового поста
         content:
@@ -32,7 +32,7 @@ paths:
                   user_id: 482953816921
                   text: "Путешествие в Африку в декабре этого года"
                   location: "Нгоронгоро, Танзания"
-                  photos: []
+                  created_at: 1760299494000
         required: true
       responses:
         '204':
@@ -58,12 +58,12 @@ paths:
                       message: "Некорректный формат"
         '5XX':
           description: Ошибка сервера
-  /post/{id}/reaction:
-    post:
+  /posts/{id}:
+    get:
       tags:
-        - post
-      summary: Добавление реакции к посту
-      description: Добавление реакции к посту
+        - posts
+      summary: Получение поста по id
+      description: Получение поста по id
       parameters:
         - name: id
           in: path
@@ -72,56 +72,21 @@ paths:
           schema:
             type: integer
             format: int64
-      requestBody:
-        description: Добавление реакции к посту
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                reaction_id:
-                  type: integer
-                  format: int32
-                  description: id реакции из справочника
-                user_id:
-                  type: integer
-                  format: int64
-                  description: id пользователя, давшего оценку
-              required:
-                - reaction_id
-                - user_id
-            examples:
-              request:
-                value:
-                  reaction_id: 12
-                  user_id: 482953816921
-        required: true
       responses:
-        '204':
-          description: Успешное добавление реакции
-        '400':
-          description: Некорректный запрос
-        '404':
-          description: Пост не найден
-        '422':
-          description: Ошибка валидации
+        '200':
+          description: Пост
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
-              examples:
-                response:
-                  value:
-                    code: "E.4001.001"
-                    details:
-                      target: "id"
-                      message: "Некорректный формат"
+                $ref: '#/components/schemas/Post'
+        '404':
+          description: Пост не найден
         '5XX':
           description: Ошибка сервера
-  /post/{id}/comment:
+  /posts/{id}/comments:
     post:
       tags:
-        - post
+        - posts
       summary: Комментирование поста
       description: Добавление комментария к посту
       parameters:
@@ -139,6 +104,10 @@ paths:
             schema:
               type: object
               properties:
+                id:
+                  type: integer
+                  format: int64
+                  description: id записи
                 user_id:
                   type: integer
                   format: int64
@@ -147,14 +116,22 @@ paths:
                   type: string
                   maxLength: 1500
                   description: текст комментария
+                created_at:
+                  type: integer
+                  format: int64
+                  description: время добавления в миллисекундах
               required:
+                - id
                 - user_id
                 - text
+                - created_at
             examples:
               request:
                 value:
+                  id: 349962352
                   user_id: 482953816921
                   text: "Я останавливался в этом же отеле год назад."
+                  created_at: 1760299494000
         required: true
       responses:
         '204':
@@ -178,10 +155,9 @@ paths:
                       message: "Некорректный формат"
         '5XX':
           description: Ошибка сервера
-  /post/{id}/comments:
     get:
       tags:
-        - post
+        - posts
       summary: Получение комментариев для поста
       description: Получение комментариев для поста
       parameters:
@@ -249,10 +225,75 @@ paths:
                       message: "Значение не может быть отрицательным"
         '5XX':
           description: Ошибка сервера
-  /post/{id}/reactions:
+  /posts/{id}/reactions:
+    post:
+      tags:
+        - posts
+      summary: Добавление реакции к посту
+      description: Добавление реакции к посту
+      parameters:
+        - name: id
+          in: path
+          description: id поста
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        description: Добавление реакции к посту
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  format: int64
+                  description: id записи
+                user_id:
+                  type: integer
+                  format: int64
+                  description: id пользователя, давшего оценку
+                created_at:
+                  type: integer
+                  format: int64
+                  description: время добавления в миллисекундах
+              required:
+                - id
+                - user_id
+                - created_at
+            examples:
+              request:
+                value:
+                  id: 349962352
+                  user_id: 482953816921
+                  created_at: 1760299494000
+        required: true
+      responses:
+        '204':
+          description: Успешное добавление реакции
+        '400':
+          description: Некорректный запрос
+        '404':
+          description: Пост не найден
+        '422':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                response:
+                  value:
+                    code: "E.4001.001"
+                    details:
+                      target: "id"
+                      message: "Некорректный формат"
+        '5XX':
+          description: Ошибка сервера
     get:
       tags:
-        - post
+        - posts
       summary: Подсчет реакций для поста
       description: Подсчет реакций для поста
       parameters:
@@ -265,30 +306,21 @@ paths:
             format: int64
       responses:
         '200':
-          description: Массив реакций с указанием кол-ва пользователей, выбравших реакцию
+          description: Количество лайков поста
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    reaction_id:
-                      type: integer
-                      format: int32
-                      description: id реакции из справочника
-                    count:
-                      type: integer
-                      description: сколько пользователей выбрало реакцию
-                      example: 172
+                type: integer
+                format: int64
+                example: 17278
         '404':
           description: Пост не найден
         '5XX':
           description: Ошибка сервера
-  /post/{id}/photos:
+  /posts/{id}/photos:
     get:
       tags:
-        - post
+        - posts
       summary: Получение всех фотографий для поста
       description: Получение всех фотографий для поста
       parameters:
@@ -312,13 +344,19 @@ paths:
           description: Пост не найден
         '5XX':
           description: Ошибка сервера
-  /post/popularDestinations:
+  /posts/popularPlaces:
     get:
       tags:
-        - post
+        - posts
       summary: Поиск популярных мест для путешествий
       description: Поиск популярных мест для путешествий
       parameters:
+        - name: place
+          in: query
+          description: место, для которого необходимо найти посты
+          required: true
+          schema:
+            type: string
         - name: limit
           in: query
           description: количество постов
@@ -355,19 +393,45 @@ paths:
                       message: "Значение не может быть отрицательным"
         '5XX':
           description: Ошибка сервера
-  /photo:
+  /photos:
     post:
       tags:
-        - photo
+        - photos
       summary: Добавление фотографии
       description: Добавление фотографии
       requestBody:
         description: Добавление фотографии
         content:
-          image/png:
+          multipart/form-data:
             schema:
-              type: string
-              format: binary
+              type: object
+              properties:
+                id:
+                  type: integer
+                  format: int64
+                  description: id записи
+                image:
+                  type: string
+                  format: binary
+                  description: изображение
+                user_id:
+                  type: integer
+                  format: int64
+                  description: id пользователя, добавляющего фотографию
+                post_id:
+                  type: integer
+                  format: int64
+                  description: id поста, к которому добавляется фотография
+                created_at:
+                  type: integer
+                  format: int64
+                  description: время добавления в миллисекундах
+                required:
+                  - id
+                  - image
+                  - user_id
+                  - post_id
+                  - created_at
         required: true
       responses:
         '200':
@@ -377,26 +441,30 @@ paths:
               schema:
                 type: object
                 properties:
-                  id:
-                    type: integer
-                    format: int64
-                    description: id фотографии
+                  preview_url:
+                    type: string
+                    format: uri
+                  url:
+                    type: string
+                    format: uri
                 required:
-                  - id
+                  - preview_url
+                  - url
               examples:
                 response:
                   value:
-                    id: 2843614705
+                    preview_url: "https://cdn.wwbb.ru/img/d27Hkw4r.png"
+                    url: "https://cdn.wwbb.ru/img/qU7s4GbX.png"
         '413':
           description: Слишком большой запрос
         '415':
           description: Неподдерживаемый тип медиа
         '5XX':
           description: Ошибка сервера
-  /photo/{id}:
+  /photos/{id}:
     get:
       tags:
-        - photo
+        - photos
       summary: Скачивание фотографии по id
       description: Скачивание фотографии
       parameters:
@@ -418,10 +486,10 @@ paths:
           description: Фотография не найдена
         '5XX':
           description: Ошибка сервера
-  /user/{id}/follow:
+  /users/{id}/follow:
     post:
       tags:
-        - user
+        - users
       summary: Подписка на пользователя
       description: Подписка на пользователя
       parameters:
@@ -439,16 +507,28 @@ paths:
             schema:
               type: object
               properties:
+                id:
+                  type: integer
+                  format: int64
+                  description: id записи
                 followed_user_id:
                   type: integer
                   format: int64
                   description: id пользователя, на которого подписываются
+                created_at:
+                  type: integer
+                  format: int64
+                  description: время добавления в миллисекундах
               required:
+                - id
                 - followed_user_id
+                - created_at
             examples:
               request:
                 value:
+                  id: 349962352
                   followed_user_id: 482953816921
+                  created_at: 1760299494000
         required: true
       responses:
         '204':
@@ -472,10 +552,10 @@ paths:
                       message: "Некорректный формат"
         '5XX':
           description: Ошибка сервера
-  /user/{id}/posts:
+  /users/{id}/posts:
     get:
       tags:
-        - user
+        - users
       summary: Получение постов для пользователя
       description: Получение постов для пользователя
       parameters:
@@ -524,12 +604,12 @@ paths:
                       message: "Некорректный формат"
         '5XX':
           description: Ошибка сервера
-  /user/{id}/subscriptions/posts:
+  /users/{id}/subscriptions:
     get:
       tags:
-        - user
-      summary: Получение постов из подписок пользователя
-      description: Получение постов из подписок пользователя
+        - users
+      summary: Получение подписок пользователя
+      description: Получение подписок пользователя
       parameters:
         - name: id
           in: path
@@ -540,7 +620,7 @@ paths:
             format: int64
         - name: limit
           in: query
-          description: количество постов
+          description: количество подписок
           required: false
           schema:
             type: integer
@@ -552,13 +632,29 @@ paths:
             type: integer
       responses:
         '200':
-          description: Массив постов
+          description: Подписки пользователя
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Post'
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      format: int64
+                      description: id записи
+                      example: 5379031472
+                    followed_user_id:
+                      type: integer
+                      format: int64
+                      description: пользователь, на которого подписан
+                      example: 482953816921
+                    created_at:
+                      type: integer
+                      format: int64
+                      description: время добавления в миллисекундах
+                      example: 1760299494000
         '404':
           description: Пользователь не найден
         '422':
@@ -606,18 +702,12 @@ components:
           format: int64
           description: время добавления в миллисекундах
           example: 1760299494000
-        photos:
-          type: array
-          description: массив фотографий
-          items:
-            $ref: '#/components/schemas/Photo'
-          minItems: 0
-          maxItems: 10
       required:
         - id
         - user_id
         - text
         - location
+        - created_at
     Photo:
       type: object
       properties:
@@ -630,9 +720,34 @@ components:
           type: string
           format: binary
           description: фотография
+        user_id:
+          type: integer
+          format: int64
+          description: id пользователя, добавляющего фотографию
+        post_id:
+          type: integer
+          format: int64
+          description: id поста, к которому добавляется фотография
+        created_at:
+          type: integer
+          format: int64
+          description: время добавления в миллисекундах
+        preview_url:
+          type: string
+          format: uri
+          description: ссылка на миниатюру фотографии
+        url:
+          type: string
+          format: uri
+          description: ссылка на полноразмерную фотографию
       required:
         - id
         - image
+        - user_id
+        - post_id
+        - created_at
+        - preview_url
+        - url
     Error:
       type: object
       properties:
