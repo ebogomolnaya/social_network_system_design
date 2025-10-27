@@ -1,0 +1,768 @@
+openapi: 3.0.4
+
+info:
+  title: Social Network - System Design Course
+  description: API социальной сети для путешественников
+  version: 1.0.0
+
+tags:
+  - name: posts
+    description: Действия над постами
+  - name: photos
+    description: Действия над фотографиями
+  - name: users
+    description: Действия с пользователями
+paths:
+  /posts:
+    post:
+      tags:
+        - posts
+      summary: Добавление нового поста
+      description: Добавление нового поста с описанием и местом путешествия
+      requestBody:
+        description: Создание нового поста
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Post'
+            examples:
+              request:
+                value:
+                  id: 2843614705
+                  user_id: 482953816921
+                  text: "Путешествие в Африку в декабре этого года"
+                  location: "Нгоронгоро, Танзания"
+                  created_at: 1760299494000
+        required: true
+      responses:
+        '204':
+          description: Успешное добавление поста
+        '400':
+          description: Некорректный запрос
+        '405':
+          description: Метод не поддерживается
+        '409':
+          description: Конфликт
+        '422':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                response:
+                  value:
+                    code: "E.4001.001"
+                    details:
+                      target: "id"
+                      message: "Некорректный формат"
+        '5XX':
+          description: Ошибка сервера
+  /posts/{id}:
+    get:
+      tags:
+        - posts
+      summary: Получение поста по id
+      description: Получение поста по id
+      parameters:
+        - name: id
+          in: path
+          description: id поста
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Пост
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '404':
+          description: Пост не найден
+        '5XX':
+          description: Ошибка сервера
+  /posts/{id}/comments:
+    post:
+      tags:
+        - posts
+      summary: Комментирование поста
+      description: Добавление комментария к посту
+      parameters:
+        - name: id
+          in: path
+          description: id поста
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        description: Добавление комментария к посту
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  format: int64
+                  description: id записи
+                user_id:
+                  type: integer
+                  format: int64
+                  description: id пользователя, добавившего комментарий
+                text:
+                  type: string
+                  maxLength: 1500
+                  description: текст комментария
+                created_at:
+                  type: integer
+                  format: int64
+                  description: время добавления в миллисекундах
+              required:
+                - id
+                - user_id
+                - text
+                - created_at
+            examples:
+              request:
+                value:
+                  id: 349962352
+                  user_id: 482953816921
+                  text: "Я останавливался в этом же отеле год назад."
+                  created_at: 1760299494000
+        required: true
+      responses:
+        '204':
+          description: Успешное добавление комментария
+        '400':
+          description: Некорректный запрос
+        '404':
+          description: Пост не найден
+        '422':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                response:
+                  value:
+                    code: "E.4001.001"
+                    details:
+                      target: "id"
+                      message: "Некорректный формат"
+        '5XX':
+          description: Ошибка сервера
+    get:
+      tags:
+        - posts
+      summary: Получение комментариев для поста
+      description: Получение комментариев для поста
+      parameters:
+        - name: id
+          in: path
+          description: id поста
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: limit
+          in: query
+          description: количество комментариев
+          required: false
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          description: номер страницы с результатами
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Массив комментариев
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      format: int64
+                      description: id комментария
+                      example: 5379031472
+                    text:
+                      type: string
+                      description: текст комментария
+                    user_id:
+                      type: integer
+                      format: int64
+                      description: пользователь, добавивший комментарий
+                      example: 482953816921
+                    created_at:
+                      type: integer
+                      format: int64
+                      description: время добавления в миллисекундах
+                      example: 1760299494000
+        '404':
+          description: Пост не найден
+        '422':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                response:
+                  value:
+                    code: "E.4001.002"
+                    details:
+                      target: "limit"
+                      message: "Значение не может быть отрицательным"
+        '5XX':
+          description: Ошибка сервера
+  /posts/{id}/reactions:
+    post:
+      tags:
+        - posts
+      summary: Добавление реакции к посту
+      description: Добавление реакции к посту
+      parameters:
+        - name: id
+          in: path
+          description: id поста
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        description: Добавление реакции к посту
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  format: int64
+                  description: id записи
+                user_id:
+                  type: integer
+                  format: int64
+                  description: id пользователя, давшего оценку
+                created_at:
+                  type: integer
+                  format: int64
+                  description: время добавления в миллисекундах
+              required:
+                - id
+                - user_id
+                - created_at
+            examples:
+              request:
+                value:
+                  id: 349962352
+                  user_id: 482953816921
+                  created_at: 1760299494000
+        required: true
+      responses:
+        '204':
+          description: Успешное добавление реакции
+        '400':
+          description: Некорректный запрос
+        '404':
+          description: Пост не найден
+        '422':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                response:
+                  value:
+                    code: "E.4001.001"
+                    details:
+                      target: "id"
+                      message: "Некорректный формат"
+        '5XX':
+          description: Ошибка сервера
+    get:
+      tags:
+        - posts
+      summary: Подсчет реакций для поста
+      description: Подсчет реакций для поста
+      parameters:
+        - name: id
+          in: path
+          description: id поста
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Количество лайков поста
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int64
+                example: 17278
+        '404':
+          description: Пост не найден
+        '5XX':
+          description: Ошибка сервера
+  /posts/{id}/photos:
+    get:
+      tags:
+        - posts
+      summary: Получение всех фотографий для поста
+      description: Получение всех фотографий для поста
+      parameters:
+        - name: id
+          in: path
+          description: id поста
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Массив фотографий
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Photo'
+        '404':
+          description: Пост не найден
+        '5XX':
+          description: Ошибка сервера
+  /posts/popularPlaces:
+    get:
+      tags:
+        - posts
+      summary: Поиск популярных мест для путешествий
+      description: Поиск популярных мест для путешествий
+      parameters:
+        - name: place
+          in: query
+          description: место, для которого необходимо найти посты
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: количество постов
+          required: false
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          description: номер страницы с результатами
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Массив постов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+        '422':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                response:
+                  value:
+                    code: "E.4001.002"
+                    details:
+                      target: "limit"
+                      message: "Значение не может быть отрицательным"
+        '5XX':
+          description: Ошибка сервера
+  /photos:
+    post:
+      tags:
+        - photos
+      summary: Добавление фотографии
+      description: Добавление фотографии
+      requestBody:
+        description: Добавление фотографии
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  format: int64
+                  description: id записи
+                image:
+                  type: string
+                  format: binary
+                  description: изображение
+                user_id:
+                  type: integer
+                  format: int64
+                  description: id пользователя, добавляющего фотографию
+                post_id:
+                  type: integer
+                  format: int64
+                  description: id поста, к которому добавляется фотография
+                created_at:
+                  type: integer
+                  format: int64
+                  description: время добавления в миллисекундах
+                required:
+                  - id
+                  - image
+                  - user_id
+                  - post_id
+                  - created_at
+        required: true
+      responses:
+        '200':
+          description: Успешное добавление фотографии
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  preview_url:
+                    type: string
+                    format: uri
+                  url:
+                    type: string
+                    format: uri
+                required:
+                  - preview_url
+                  - url
+              examples:
+                response:
+                  value:
+                    preview_url: "https://cdn.wwbb.ru/img/d27Hkw4r.png"
+                    url: "https://cdn.wwbb.ru/img/qU7s4GbX.png"
+        '413':
+          description: Слишком большой запрос
+        '415':
+          description: Неподдерживаемый тип медиа
+        '5XX':
+          description: Ошибка сервера
+  /photos/{id}:
+    get:
+      tags:
+        - photos
+      summary: Скачивание фотографии по id
+      description: Скачивание фотографии
+      parameters:
+        - name: id
+          in: path
+          description: id фотографии
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Фотография
+          content:
+            image/png:
+              schema:
+                $ref: '#/components/schemas/Photo'
+        '404':
+          description: Фотография не найдена
+        '5XX':
+          description: Ошибка сервера
+  /users/{id}/follow:
+    post:
+      tags:
+        - users
+      summary: Подписка на пользователя
+      description: Подписка на пользователя
+      parameters:
+        - name: id
+          in: path
+          description: id подписчика
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        description: Подписка на пользователя
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  format: int64
+                  description: id записи
+                followed_user_id:
+                  type: integer
+                  format: int64
+                  description: id пользователя, на которого подписываются
+                created_at:
+                  type: integer
+                  format: int64
+                  description: время добавления в миллисекундах
+              required:
+                - id
+                - followed_user_id
+                - created_at
+            examples:
+              request:
+                value:
+                  id: 349962352
+                  followed_user_id: 482953816921
+                  created_at: 1760299494000
+        required: true
+      responses:
+        '204':
+          description: Успешное добавление подписки
+        '400':
+          description: Некорректный запрос
+        '404':
+          description: Пользователь не найден
+        '422':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                response:
+                  value:
+                    code: "E.4001.001"
+                    details:
+                      target: "id"
+                      message: "Некорректный формат"
+        '5XX':
+          description: Ошибка сервера
+  /users/{id}/posts:
+    get:
+      tags:
+        - users
+      summary: Получение постов для пользователя
+      description: Получение постов для пользователя
+      parameters:
+        - name: id
+          in: path
+          description: id пользователя
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: limit
+          in: query
+          description: количество постов
+          required: false
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          description: номер страницы с результатами
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Массив постов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+        '404':
+          description: Пользователь не найден
+        '422':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                response:
+                  value:
+                    code: "E.4001.001"
+                    details:
+                      target: "id"
+                      message: "Некорректный формат"
+        '5XX':
+          description: Ошибка сервера
+  /users/{id}/subscriptions:
+    get:
+      tags:
+        - users
+      summary: Получение подписок пользователя
+      description: Получение подписок пользователя
+      parameters:
+        - name: id
+          in: path
+          description: id пользователя
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: limit
+          in: query
+          description: количество подписок
+          required: false
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          description: номер страницы с результатами
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Подписки пользователя
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      format: int64
+                      description: id записи
+                      example: 5379031472
+                    followed_user_id:
+                      type: integer
+                      format: int64
+                      description: пользователь, на которого подписан
+                      example: 482953816921
+                    created_at:
+                      type: integer
+                      format: int64
+                      description: время добавления в миллисекундах
+                      example: 1760299494000
+        '404':
+          description: Пользователь не найден
+        '422':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                response:
+                  value:
+                    code: "E.4001.001"
+                    details:
+                      target: "id"
+                      message: "Некорректный формат"
+        '5XX':
+          description: Ошибка сервера
+components:
+  schemas:
+    Post:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: id поста
+          example: 2843614705
+        user_id:
+          type: integer
+          format: int64
+          description: id пользователя
+          example: 482953816921
+        text:
+          type: string
+          description: текст поста
+          maxLength: 2200
+          example: Путешествие в Африку в декабре этого года
+        location:
+          type: string
+          description: место путешествия
+          maxLength: 512
+          example: Нгоронгоро, Танзания
+        created_at:
+          type: integer
+          format: int64
+          description: время добавления в миллисекундах
+          example: 1760299494000
+      required:
+        - id
+        - user_id
+        - text
+        - location
+        - created_at
+    Photo:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: id фотографии
+          example: 5379031472
+        image:
+          type: string
+          format: binary
+          description: фотография
+        user_id:
+          type: integer
+          format: int64
+          description: id пользователя, добавляющего фотографию
+        post_id:
+          type: integer
+          format: int64
+          description: id поста, к которому добавляется фотография
+        created_at:
+          type: integer
+          format: int64
+          description: время добавления в миллисекундах
+        preview_url:
+          type: string
+          format: uri
+          description: ссылка на миниатюру фотографии
+        url:
+          type: string
+          format: uri
+          description: ссылка на полноразмерную фотографию
+      required:
+        - id
+        - image
+        - user_id
+        - post_id
+        - created_at
+        - preview_url
+        - url
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: код ошибки
+        details:
+          type: object
+          properties:
+            target:
+              type: string
+              description: поле, вызвавшее ошибку валидации
+            message:
+              type: string
+              description: сообщение об ошибке
+          required:
+            - target
+            - message
