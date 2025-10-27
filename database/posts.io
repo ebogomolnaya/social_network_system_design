@@ -9,22 +9,32 @@ Table posts {
   created_at timestamp
 }
 
-// справочник, содержащий картинки-реакции
-Table reactions {
+// ссылки ведут на CDN
+Table photos {
   id integer [pk]
-  name varchar [not null]
-  image bytea
+  image_preview_url uri
+  image_url uri
+  created_at timestamp
 }
 
-// какие реакции и какими пользователями добавлены к посту
+// привязка фотографий к посту
+Table post_photos {
+  post_id integer [not null, ref: > posts.id]
+  photo_id integer [not null, ref: > photos.id]
+
+  indexes {
+      (post_id, photo_id) [pk] // составной первичный ключ
+    }
+}
+
+// какими пользователями реакции добавлены к посту
 Table post_reactions {
   post_id integer [not null, ref: > posts.id]
-  reaction_id integer [not null, ref: > reactions.id]
   user_id integer [not null, ref: > users.id]
   created_at timestamp
 
   indexes {
-      (post_id, reaction_id, user_id) [pk] // составной первичный ключ
+      (post_id, user_id) [pk] // составной первичный ключ
     }
 }
 
