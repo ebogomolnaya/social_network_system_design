@@ -1,0 +1,17 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(client, "UI Client", "Web/Mobile")
+Container(subscriptionsService, "Subscriptions Service", "Microservice", "Stores users, handles adding and getting user subscriptions")
+Container(postsService, "Posts Service", "Microservice", "Handles adding and getting posts, stores photo metainfo")
+Container(reactionsService, "Reactions Service", "Microservice", "Handles adding and getting post's likes and comments")
+Container(imageStorage, "Image Storage", "Minio", "Stores photo images")
+
+Rel(client, subscriptionsService, "Adds/gets user subscriptions")
+Rel(client, postsService, "Adds/gets posts")
+Rel(client, postsService, "Uploads photos to a post")
+Rel(postsService, imageStorage, "Uploads image to storage")
+Rel(postsService, imageStorage, "Gets preview/full image from storage")
+Rel(client, postsService, "Searches posts by popular places")
+Rel(client, reactionsService, "Adds/gets post's likes and comments")
+@enduml
