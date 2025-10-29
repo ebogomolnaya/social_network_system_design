@@ -1,0 +1,23 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(client, "UI Client", "Web/Mobile")
+Container(loadBalancer, "Load Balancer", "Nginx", "Uses round robin")
+Container(postsService, "Posts Service", "Microservice", "Handles adding and getting posts and photos")
+ContainerQueue(messageQueue, "Events queue", "RabbitMq", "Message queue for posts events")
+
+System_Boundary(usersSystem, "Users Service") {
+    Container(usersService, "Users Service", "Java", "Handles adding and getting users and their subscriptions", $tags="webApp")
+    ContainerDb(usersDatabase, "Users database", "PgSQL", "Stores users and subscriptions",  $tags="db")
+    ContainerDb(usersCache, "Cache", "Redis", "Stores frequently used user information",  $tags="db")
+}
+
+Rel(client, loadBalancer, "Handles adding and getting users and their subscriptions", "REST")
+Rel(loadBalancer, usersService, "Handles adding and getting users and their subscriptions", "REST")
+
+Rel(usersService, usersDatabase, "Adds and gets users and their subscriptions")
+Rel(usersService, usersCache, "Gets and puts frequently used user information")
+
+Rel(postsService, messageQueue, "Publishes posts events")
+Rel(usersService, messageQueue, "Subscribes on posts events")
+@enduml

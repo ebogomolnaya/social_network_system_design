@@ -193,3 +193,37 @@
   подписки  
   hosts = 2 SSD / 2 = 1  
   hosts with replication = 1 * 3 = 3
+
+# Верхнеуровневое проектирование системы
+Визуализация с помощью [C4 model](https://c4model.com/)
+<p>
+    </br><b>Level 1.</b> System context diagram</br></br>
+</p>
+
+<p>
+  <img src="architecture/diagrams/context.svg" />
+</p>
+
+<p>
+    </br><b>Level 2.</b> Users Service Container diagram</br></br>
+</p> 
+
+<p>
+  <img src="architecture/diagrams/containers/users.svg" />
+</p>
+
+<p>
+    </br><b>Level 2.</b> Posts Service Container diagram</br></br>
+</p> 
+
+<p>
+  <img src="architecture/diagrams/containers/posts.svg" />
+</p>
+
+<p>
+    </br><b>Level 2.</b> Reactions Service Container diagram</br></br>
+</p> 
+
+<p>
+  <img src="architecture/diagrams/containers/reactions.svg" />
+</p>
