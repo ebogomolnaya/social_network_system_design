@@ -203,3 +203,27 @@
 <p>
   <img src="architecture/diagrams/context.svg" />
 </p>
+
+<p>
+    </br><b>Level 2.</b> Users Service Container diagram</br></br>
+</p> 
+
+<p>
+  <img src="architecture/diagrams/containers/users.svg" />
+</p>
+
+<p>
+    </br><b>Level 2.</b> Posts Service Container diagram</br></br>
+</p> 
+
+<p>
+  <img src="architecture/diagrams/containers/posts.svg" />
+</p>
+
+<p>
+    </br><b>Level 2.</b> Reactions Service Container diagram</br></br>
+</p> 
+
+<p>
+  <img src="architecture/diagrams/containers/reactions.svg" />
+</p>
