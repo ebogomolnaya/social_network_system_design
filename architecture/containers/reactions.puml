@@ -3,21 +3,16 @@
 
 Person(client, "UI Client", "Web/Mobile")
 Container(loadBalancer, "Load Balancer", "Nginx", "Uses round robin")
-Container(postsService, "Posts Service", "Microservice", "Handles adding and getting posts and photos")
-ContainerQueue(messageQueue, "Events queue", "RabbitMq", "Message queue for reaction events")
 
 System_Boundary(reactionsSystem, "Reactions Service") {
     Container(reactionsService, "Reactions Service", "Java", "Handles adding and getting post's likes and comments", $tags="webApp")
     ContainerDb(reactionsDatabase, "Reactions database", "PgSQL", "Stores likes and comments",  $tags="db")
-    ContainerDb(reactionsCache, "Cache", "Redis", "Stores frequently added/retrieved likes and comments",  $tags="db")
+    ContainerDb(reactionsCache, "Cache", "Redis", "Stores frequently added/retrieved comments",  $tags="db")
 }
 
 Rel(client, loadBalancer, "Adds/gets post's likes and comments", "REST")
 Rel(loadBalancer, reactionsService, "Adds/gets post's likes and comments", "REST")
 
 Rel(reactionsService, reactionsDatabase, "Adds/gets post's likes and comments")
-Rel(reactionsService, reactionsCache, "Gets and puts frequently added/retrieved likes and comments")
-
-Rel(reactionsService, messageQueue, "Publishes reaction events")
-Rel(postsService, messageQueue, "Subscribes on reaction events")
+Rel(reactionsService, reactionsCache, "Gets and puts frequently added/retrieved comments")
 @enduml
