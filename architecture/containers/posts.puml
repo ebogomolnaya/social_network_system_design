@@ -1,0 +1,30 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(client, "UI Client", "Web/Mobile")
+Container(loadBalancer, "Load Balancer", "Nginx", "Uses round robin")
+Container(imageStorage, "Image Storage", "Minio", "Stores photo images")
+Container(searchEngine, "Search Engine", "ElasticSearch", "Provides full-text search by popular places")
+
+System_Boundary(postsSystem, "Posts Service") {
+    Container(postsService, "Posts Service", "Java", "Handles adding and getting posts and photos", $tags="webApp")
+    ContainerDb(postsDatabase, "Posts database", "PgSQL", "Stores posts and photo metainfo",  $tags="db")
+    ContainerDb(postsCache, "Cache", "Redis", "Stores frequently added/retrieved posts",  $tags="db")
+}
+
+Rel(client, loadBalancer, "Handles adding and getting posts", "REST")
+Rel(loadBalancer, postsService, "Handles adding and getting posts", "REST")
+
+Rel(client, loadBalancer, "Handles uploading photos to a post", "REST")
+Rel(loadBalancer, postsService, "Handles uploading photos to a post", "REST")
+
+Rel(client, loadBalancer, "Searches posts by popular places", "REST")
+Rel(loadBalancer, postsService, "Searches posts by popular places", "REST")
+Rel(postsService, searchEngine, "Searches by popular places")
+
+Rel(postsService, postsDatabase, "Adds and gets posts and photos")
+Rel(postsService, postsCache, "Gets and puts frequently added/retrieved posts")
+
+Rel(postsService, imageStorage, "Uploads image to storage")
+Rel(postsService, imageStorage, "Gets preview/full image from storage")
+@enduml

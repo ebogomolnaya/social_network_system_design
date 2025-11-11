@@ -1,0 +1,18 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(client, "UI Client", "Web/Mobile")
+Container(loadBalancer, "Load Balancer", "Nginx", "Uses round robin")
+
+System_Boundary(reactionsSystem, "Reactions Service") {
+    Container(reactionsService, "Reactions Service", "Java", "Handles adding and getting post's likes and comments", $tags="webApp")
+    ContainerDb(reactionsDatabase, "Reactions database", "PgSQL", "Stores likes and comments",  $tags="db")
+    ContainerDb(reactionsCache, "Cache", "Redis", "Stores frequently added/retrieved comments",  $tags="db")
+}
+
+Rel(client, loadBalancer, "Adds/gets post's likes and comments", "REST")
+Rel(loadBalancer, reactionsService, "Adds/gets post's likes and comments", "REST")
+
+Rel(reactionsService, reactionsDatabase, "Adds/gets post's likes and comments")
+Rel(reactionsService, reactionsCache, "Gets and puts frequently added/retrieved comments")
+@enduml
